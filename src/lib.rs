@@ -1,4 +1,34 @@
-//! A high-level basic access authentication request guard for Rocket.rs
+//! A high-level [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication)
+//! request guard for [Rocket.rs](https://rocket.rs)
+//!
+//! # Example
+//!
+//! ```no_run
+//! #![feature(proc_macro_hygiene, decl_macro)]
+//!
+//! #[macro_use] extern crate rocket;
+//!
+//! use rocket_basicauth::BasicAuth;
+//!
+//! /// Hello route with `auth` request guard, containing a `name` and `password`
+//! #[get("/hello/<age>")]
+//! fn hello(auth: BasicAuth, age: u8) -> String {
+//!     format!("Hello, {} year old named {}!", age, auth.name)
+//! }
+//!
+//! fn main() {
+//!     rocket::ignite().mount("/", routes![hello]).launch();
+//! }
+//! ```
+//!
+//! # Installation
+//!
+//! Simply add the following to your `Cargo.toml` file:
+//!
+//! ```toml
+//! [dependencies]
+//! rocket-basicauth = "1"
+//! ```
 
 use base64;
 use rocket::http::Status;
@@ -10,8 +40,10 @@ use rocket::Outcome;
 pub enum BasicAuthError {
     /// Length check fail or misc error
     BadCount,
+
     /// Header is missing and is required
     Missing,
+
     /// Header is invalid in formatting/encoding
     Invalid,
 }
@@ -33,9 +65,29 @@ fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String
     }
 }
 
-/// Authorisation header used as a request guard to securely get names and
-/// passwords using [http basic
-/// auth](https://en.wikipedia.org/wiki/Basic_access_authentication)
+/// A high-level [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication)
+/// request guard implementation, containing the `name` and `password` used for
+/// authentication
+///
+/// # Example
+///
+/// ```no_run
+/// #![feature(proc_macro_hygiene, decl_macro)]
+///
+/// #[macro_use] extern crate rocket;
+///
+/// use rocket_basicauth::BasicAuth;
+///
+/// /// Hello route with `auth` request guard, containing a `name` and `password`
+/// #[get("/hello/<age>")]
+/// fn hello(auth: BasicAuth, age: u8) -> String {
+///     format!("Hello, {} year old named {}!", age, auth.name)
+/// }
+///
+/// fn main() {
+///     rocket::ignite().mount("/", routes![hello]).launch();
+/// }
+/// ```
 #[derive(Debug)]
 pub struct BasicAuth {
     /// Required (user)name
@@ -46,8 +98,8 @@ pub struct BasicAuth {
 }
 
 impl BasicAuth {
-    /// Creates a new [BasicAuth] struct/request guard from given plaintext
-    /// auth header or returns a [Option::None] if invalid
+    /// Creates a new [BasicAuth] struct/request guard from a given plaintext
+    /// http auth header or returns a [Option::None] if invalid
     pub fn new<T: Into<String>>(auth_header: T) -> Option<Self> {
         let key = auth_header.into();
 
