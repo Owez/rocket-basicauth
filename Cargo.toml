@@ -11,4 +11,4 @@ edition = "2018"
 
 [dependencies]
 base64 = "0.13"
-rocket = "0.4.5"
+rocket = "0.4"
