@@ -2,6 +2,9 @@
 name = "rocket-basicauth"
 description = "A high-level basic access authentication request guard for Rocket.rs"
 version = "1.0.0"
+readme = "README.md"
+license = "MIT"
+keywords = ["rocket", "web", "auth", "basic auth", "authentication"]
 authors = ["Owez <root@ogriffiths.com>"]
 edition = "2018"
 
