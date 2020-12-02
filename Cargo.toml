@@ -4,6 +4,7 @@ description = "A high-level basic access authentication request guard for Rocket
 version = "1.0.0"
 readme = "README.md"
 license = "MIT"
+repository = "https://github.com/owez/rocket-basicauth"
 keywords = ["web", "rocket", "auth", "basic-auth", "authentication"]
 authors = ["Owez <root@ogriffiths.com>"]
 edition = "2018"
