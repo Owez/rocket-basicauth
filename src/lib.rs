@@ -35,7 +35,7 @@
 use base64;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
-use rocket::Outcome;
+use rocket::outcome::Outcome;
 
 /// Contains errors relating to the [BasicAuth] request guard
 #[derive(Debug)]
@@ -50,7 +50,7 @@ pub enum BasicAuthError {
     Invalid,
 }
 
-/// Decodes a base64-encoded string into a tuple of `(name, password)` or a
+/// Decodes a base64-encoded string into a tuple of `(username, password)` or a
 /// [Option::None] if badly formatted, e.g. if an error occurs
 fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String)> {
     let decoded_creds = match base64::decode(base64_encoded.into()) {
@@ -108,9 +108,9 @@ impl BasicAuth {
             return None;
         }
 
-        let (name, password) = decode_to_creds(&key[6..])?;
+        let (username, password) = decode_to_creds(&key[6..])?;
 
-        Some(Self { name, password })
+        Some(Self { username, password })
     }
 }
 
