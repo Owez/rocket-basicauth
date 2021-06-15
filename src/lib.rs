@@ -7,8 +7,6 @@
 //! # Example
 //!
 //! ```no_run
-//! #![feature(proc_macro_hygiene, decl_macro)]
-//!
 //! #[macro_use] extern crate rocket;
 //!
 //! use rocket_basicauth::BasicAuth;
@@ -16,11 +14,12 @@
 //! /// Hello route with `auth` request guard, containing a `name` and `password`
 //! #[get("/hello/<age>")]
 //! fn hello(auth: BasicAuth, age: u8) -> String {
-//!     format!("Hello, {} year old named {}!", age, auth.name)
+//!     format!("Hello, {} year old named {}!", age, auth.username)
 //! }
 //!
-//! fn main() {
-//!     rocket::ignite().mount("/", routes![hello]).launch();
+//! #[launch]
+//! fn rocket() {
+//!     rocket::build().mount("/", routes![hello]);
 //! }
 //! ```
 //!
@@ -30,7 +29,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! rocket-basicauth = "1"
+//! rocket-basicauth = "2"
 //! ```
 
 use base64;
@@ -45,7 +44,7 @@ pub enum BasicAuthError {
     BadCount,
 
     /// Header is missing and is required
-    Missing,
+    //Missing,
 
     /// Header is invalid in formatting/encoding
     Invalid,
@@ -59,9 +58,9 @@ fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String
         Err(_) => return None,
     };
 
-    let split_vec: Vec<&str> = decoded_creds.split(":").collect();
+    let split_vec: Vec<&str> = decoded_creds.splitn(2, ":").collect();
 
-    if split_vec.len() != 2 {
+    if split_vec.len() < 2 {
         None
     } else {
         Some((split_vec[0].to_string(), split_vec[1].to_string()))
@@ -69,32 +68,31 @@ fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String
 }
 
 /// A high-level [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication)
-/// request guard implementation, containing the `name` and `password` used for
+/// request guard implementation, containing the `username` and `password` used for
 /// authentication
 ///
 /// # Example
 ///
 /// ```no_run
-/// #![feature(proc_macro_hygiene, decl_macro)]
-///
 /// #[macro_use] extern crate rocket;
 ///
 /// use rocket_basicauth::BasicAuth;
 ///
-/// /// Hello route with `auth` request guard, containing a `name` and `password`
+/// /// Hello route with `auth` request guard, containing a `username` and `password`
 /// #[get("/hello/<age>")]
 /// fn hello(auth: BasicAuth, age: u8) -> String {
-///     format!("Hello, {} year old named {}!", age, auth.name)
+///     format!("Hello, {} year old named {}!", age, auth.username)
 /// }
 ///
-/// fn main() {
-///     rocket::ignite().mount("/", routes![hello]).launch();
+/// #[launch]
+/// fn rocket() {
+///     rocket::build().mount("/", routes![hello]);
 /// }
 /// ```
 #[derive(Debug)]
 pub struct BasicAuth {
-    /// Required (user)name
-    pub name: String,
+    /// Required username
+    pub username: String,
 
     /// Required password
     pub password: String,
@@ -116,13 +114,14 @@ impl BasicAuth {
     }
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for BasicAuth {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for BasicAuth {
     type Error = BasicAuthError;
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
+    async fn from_request(request: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
         let keys: Vec<_> = request.headers().get("Authorization").collect();
         match keys.len() {
-            0 => Outcome::Failure((Status::BadRequest, BasicAuthError::Missing)),
+            0 => Outcome::Forward(()),
             1 => match BasicAuth::new(keys[0]) {
                 Some(auth_header) => Outcome::Success(auth_header),
                 None => Outcome::Failure((Status::BadRequest, BasicAuthError::Invalid)),
