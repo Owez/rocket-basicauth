@@ -8,8 +8,6 @@ A high-level [basic access authentication](https://en.wikipedia.org/wiki/Basic_a
 ## Example
 
 ```rust
-#![feature(proc_macro_hygiene, decl_macro)]
-
 #[macro_use] extern crate rocket;
 
 use rocket_basicauth::BasicAuth;
@@ -17,11 +15,12 @@ use rocket_basicauth::BasicAuth;
 /// Hello route with `auth` request guard, containing a `name` and `password`
 #[get("/hello/<age>")]
 fn hello(auth: BasicAuth, age: u8) -> String {
-    format!("Hello, {} year old named {}!", age, auth.name)
+    format!("Hello, {} year old named {}!", age, auth.username)
 }
 
-fn main() {
-    rocket::ignite().mount("/", routes![hello]).launch();
+#[launch]
+fn rocket() {
+    rocket::build().mount("/", routes![hello]);
 }
 ```
 
@@ -31,5 +30,5 @@ Simply add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-rocket-basicauth = "1"
+rocket-basicauth = "2"
 ```
