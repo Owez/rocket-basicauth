@@ -18,8 +18,8 @@
 //! }
 //!
 //! #[launch]
-//! fn rocket() {
-//!     rocket::build().mount("/", routes![hello]);
+//! fn rocket() -> _ {
+//!     rocket::build().mount("/", routes![hello])
 //! }
 //! ```
 //!
@@ -85,8 +85,8 @@ fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String
 /// }
 ///
 /// #[launch]
-/// fn rocket() {
-///     rocket::build().mount("/", routes![hello]);
+/// fn rocket() -> _ {
+///     rocket::build().mount("/", routes![hello])
 /// }
 /// ```
 #[derive(Debug)]
