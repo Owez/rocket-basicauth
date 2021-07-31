@@ -34,8 +34,8 @@
 
 use base64;
 use rocket::http::Status;
-use rocket::request::{self, FromRequest, Request};
 use rocket::outcome::Outcome;
+use rocket::request::{self, FromRequest, Request};
 
 /// Contains errors relating to the [BasicAuth] request guard
 #[derive(Debug)]
@@ -58,12 +58,10 @@ fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String
         Err(_) => return None,
     };
 
-    let split_vec: Vec<&str> = decoded_creds.splitn(2, ":").collect();
-
-    if split_vec.len() < 2 {
-        None
+    if let Some((username, password)) = decoded_creds.split_once(":") {
+        Some((username.to_owned(), password.to_owned()))
     } else {
-        Some((split_vec[0].to_string(), split_vec[1].to_string()))
+        None
     }
 }
 
@@ -137,14 +135,22 @@ mod tests {
 
     #[test]
     fn decode_to_creds_check() {
+        // Tests: name:password
         assert_eq!(
             decode_to_creds("bmFtZTpwYXNzd29yZA=="),
             Some(("name".to_string(), "password".to_string()))
         );
+        // Tests: name:pass:word
+        assert_eq!(
+            decode_to_creds("bmFtZTpwYXNzOndvcmQ="),
+            Some(("name".to_string(), "pass:word".to_string()))
+        );
+        // Tests: emptypass:
         assert_eq!(
             decode_to_creds("ZW1wdHlwYXNzOg=="),
             Some(("emptypass".to_string(), "".to_string()))
         );
+        // Tests: :
         assert_eq!(
             decode_to_creds("Og=="),
             Some(("".to_string(), "".to_string()))
