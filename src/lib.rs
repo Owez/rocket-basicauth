@@ -87,12 +87,12 @@ fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String
         #[cfg(feature = "log")]
         {
             const TRUNCATE_LEN: usize = 64;
-            let mut s = split_vec[0].to_string();
-            let fmt_id = if split_vec[0].len() > TRUNCATE_LEN {
+            let mut s = username.to_string();
+            let fmt_id = if username.len() > TRUNCATE_LEN {
                 s.truncate(TRUNCATE_LEN);
                 format!("{}.. (truncated to {})", s, TRUNCATE_LEN)
             } else {
-                split_vec[0].to_string()
+                s
             };
 
             trace!(
