@@ -1,12 +1,10 @@
-//! [![Tests](https://github.com/Owez/rocket-basicauth/workflows/Tests/badge.svg)](https://github.com/Owez/rocket-basicauth/actions?query=workflow%3ATests)
-//! [![Docs](https://docs.rs/rocket-basicauth/badge.svg)](https://docs.rs/rocket-basicauth/)
+//! [![Tests](https://github.com/Owez/rocket-basicauth/workflows/Tests/badge.svg)](https://github.com/Owez/rocket-basicauth/actions?query=workflow%3ATests) [![Docs](https://docs.rs/rocket-basicauth/badge.svg)](https://docs.rs/rocket-basicauth/)
 //!
-//! A high-level [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication)
-//! request guard for [Rocket.rs](https://rocket.rs)
+//! A high-level [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) request guard for [Rocket.rs](https://rocket.rs)
 //!
-//! # Example
+//! ## Example
 //!
-//! ```no_run
+//! ```rust
 //! #[macro_use] extern crate rocket;
 //!
 //! use rocket_basicauth::BasicAuth;
@@ -23,7 +21,7 @@
 //! }
 //! ```
 //!
-//! # Installation
+//! ## Installation
 //!
 //! Simply add the following to your `Cargo.toml` file:
 //!
@@ -31,11 +29,38 @@
 //! [dependencies]
 //! rocket-basicauth = "2"
 //! ```
+//!
+//! #### Disabling logging
+//!
+//! By default, this crate uses the [`log`](https://crates.io/crates/log) library to automatically add minimal trace-level logging, to disable this, instead write:
+//!
+//! ```toml
+//! [dependencies]
+//! rocket-basicauth = { version = "2", default-features = false }
+//! ```
+//!
+//! #### Rocket 0.4
+//!
+//! Support for Rocket 0.4 is **decrepit** in the eyes of this crate but may still be used by changing the version, to do this, instead write:
+//!
+//! ```toml
+//! [dependencies]
+//! rocket-basicauth = "1"
+//! ```
+//!
+//! ## Security
+//!
+//! Some essential security considerations to take into account are the following:
+//!
+//! - This crate has not been audited by any security professionals. If you are willing to do or have already done an audit on this crate, please create an issue as it would help out enormously! 😊
+//! - This crate purposefully does not limit the maximum length of http basic auth headers arriving so please ensure your webserver configurations are set properly.
 
 use base64;
+#[cfg(feature = "log")]
+use log::trace;
 use rocket::http::Status;
-use rocket::request::{self, FromRequest, Request};
 use rocket::outcome::Outcome;
+use rocket::request::{self, FromRequest, Request};
 
 /// Contains errors relating to the [BasicAuth] request guard
 #[derive(Debug)]
@@ -44,7 +69,7 @@ pub enum BasicAuthError {
     BadCount,
 
     /// Header is missing and is required
-    //Missing,
+    //Missing, // NOTE: removed migrating to 0.5 in v2 of this crate
 
     /// Header is invalid in formatting/encoding
     Invalid,
@@ -54,7 +79,7 @@ pub enum BasicAuthError {
 /// [Option::None] if badly formatted, e.g. if an error occurs
 fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String)> {
     let decoded_creds = match base64::decode(base64_encoded.into()) {
-        Ok(vecu8_creds) => String::from_utf8(vecu8_creds).unwrap(),
+        Ok(cred_bytes) => String::from_utf8(cred_bytes).unwrap(),
         Err(_) => return None,
     };
 
@@ -63,6 +88,23 @@ fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String
     if split_vec.len() < 2 {
         None
     } else {
+        #[cfg(feature = "log")]
+        {
+            const TRUNCATE_LEN: usize = 64;
+            let mut s = split_vec[0].to_string();
+            let fmt_id = if split_vec[0].len() > TRUNCATE_LEN {
+                s.truncate(TRUNCATE_LEN);
+                format!("{}.. (truncated to {})", s, TRUNCATE_LEN)
+            } else {
+                split_vec[0].to_string()
+            };
+
+            trace!(
+                "Decoded basic authentication credentials for user of id {}",
+                fmt_id
+            );
+        }
+
         Some((split_vec[0].to_string(), split_vec[1].to_string()))
     }
 }
@@ -109,7 +151,6 @@ impl BasicAuth {
         }
 
         let (username, password) = decode_to_creds(&key[6..])?;
-
         Some(Self { username, password })
     }
 }
@@ -119,6 +160,9 @@ impl<'r> FromRequest<'r> for BasicAuth {
     type Error = BasicAuthError;
 
     async fn from_request(request: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
+        #[cfg(feature = "log")]
+        trace!("Basic authorization requested, starting decode process");
+
         let keys: Vec<_> = request.headers().get("Authorization").collect();
         match keys.len() {
             0 => Outcome::Forward(()),
