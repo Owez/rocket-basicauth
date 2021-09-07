@@ -83,20 +83,16 @@ fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String
         Err(_) => return None,
     };
 
-    let split_vec: Vec<&str> = decoded_creds.splitn(2, ":").collect();
-
-    if split_vec.len() < 2 {
-        None
-    } else {
+    if let Some((username, password)) = decoded_creds.split_once(":") {
         #[cfg(feature = "log")]
         {
             const TRUNCATE_LEN: usize = 64;
-            let mut s = split_vec[0].to_string();
-            let fmt_id = if split_vec[0].len() > TRUNCATE_LEN {
+            let mut s = username.to_string();
+            let fmt_id = if username.len() > TRUNCATE_LEN {
                 s.truncate(TRUNCATE_LEN);
                 format!("{}.. (truncated to {})", s, TRUNCATE_LEN)
             } else {
-                split_vec[0].to_string()
+                s
             };
 
             trace!(
@@ -104,8 +100,10 @@ fn decode_to_creds<T: Into<String>>(base64_encoded: T) -> Option<(String, String
                 fmt_id
             );
         }
-
-        Some((split_vec[0].to_string(), split_vec[1].to_string()))
+      
+        Some((username.to_owned(), password.to_owned()))
+    } else {
+        None
     }
 }
 
@@ -181,14 +179,22 @@ mod tests {
 
     #[test]
     fn decode_to_creds_check() {
+        // Tests: name:password
         assert_eq!(
             decode_to_creds("bmFtZTpwYXNzd29yZA=="),
             Some(("name".to_string(), "password".to_string()))
         );
+        // Tests: name:pass:word
+        assert_eq!(
+            decode_to_creds("bmFtZTpwYXNzOndvcmQ="),
+            Some(("name".to_string(), "pass:word".to_string()))
+        );
+        // Tests: emptypass:
         assert_eq!(
             decode_to_creds("ZW1wdHlwYXNzOg=="),
             Some(("emptypass".to_string(), "".to_string()))
         );
+        // Tests: :
         assert_eq!(
             decode_to_creds("Og=="),
             Some(("".to_string(), "".to_string()))
