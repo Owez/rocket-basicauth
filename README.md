@@ -29,7 +29,7 @@ Simply add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-rocket-basicauth = "2"
+rocket-basicauth = "3"
 ```
 
 #### Disabling logging
@@ -39,6 +39,15 @@ By default, this crate uses the [`log`](https://crates.io/crates/log) library to
 ```toml
 [dependencies]
 rocket-basicauth = { version = "2", default-features = false }
+```
+
+#### Rocket 0.5-rc1 to 0.5-rc3
+
+Version 2.0 supports the pre-release versions of Rocket 0.5 RC1 to RC3
+
+```toml
+[dependencies]
+rocket-basicauth = "2"
 ```
 
 #### Rocket 0.4
