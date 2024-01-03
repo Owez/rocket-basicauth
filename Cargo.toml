@@ -1,7 +1,7 @@
 [package]
 name = "rocket-basicauth"
 description = "A high-level basic access authentication request guard for Rocket.rs"
-version = "2.1.2"
+version = "3.0.0"
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/owez/rocket-basicauth"
